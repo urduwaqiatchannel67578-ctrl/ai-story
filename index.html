@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoryAI | Premium AI Story Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --deep-black: #07070f;
+            --gold: #f5c842;
+            --soft-purple: #a78bfa;
+            --dark-gray: #1a1a2e;
+        }
+
+        body {
+            background-color: var(--deep-black);
+            color: #e2e8f0;
+            font-family: 'DM Sans', sans-serif;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Twinkling Stars Background */
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #07070f 100%);
+            overflow: hidden;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            animation: twinkle var(--duration) infinite ease-in-out;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: var(--opacity); transform: scale(1); }
+        }
+
+        /* Custom Components */
+        .gold-glow {
+            text-shadow: 0 0 10px rgba(245, 200, 66, 0.5);
+        }
+
+        .glass-card {
+            background: rgba(26, 26, 46, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(167, 139, 250, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+        }
+
+        .tone-chip {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid rgba(167, 139, 250, 0.3);
+        }
+
+        .tone-chip.active {
+            background-color: var(--soft-purple);
+            color: var(--deep-black);
+            border-color: var(--soft-purple);
+            box-shadow: 0 0 15px rgba(167, 139, 250, 0.4);
+        }
+
+        .gold-btn {
+            background: linear-gradient(135deg, #f5c842 0%, #d4af37 100%);
+            color: #07070f;
+            transition: all 0.3s ease;
+        }
+
+        .gold-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(245, 200, 66, 0.4);
+        }
+
+        .gold-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Loading Animation */
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,0.3);
+            border-radius: 50%;
+            border-top-color: #07070f;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--deep-black);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--soft-purple);
+        }
+    </style>
+</head>
+<body class="min-h-screen py-12 px-4">
+    <div class="stars-container" id="stars"></div>
+
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-5xl md:text-7xl font-bold text-white mb-4 gold-glow">StoryAI</h1>
+            <p class="text-lg text-purple-300 opacity-80 font-light italic">Where imagination meets intelligence</p>
+        </header>
+
+        <!-- API Key Section -->
+        <section class="glass-card rounded-2xl p-6 mb-8">
+            <!-- Input Area -->
+            <div id="apiInputContainer" class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div class="flex-1 w-full">
+                    <label class="block text-xs uppercase tracking-widest text-purple-400 mb-2 font-semibold">OpenRouter API Key</label>
+                    <input type="password" id="apiKey" placeholder="sk-or-..." 
+                           class="w-full bg-black/40 border border-purple-500/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition-all">
+                </div>
+                <button onclick="saveApiKey()" class="mt-6 md:mt-0 px-6 py-2 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 border border-purple-500/30 rounded-lg transition-all text-sm font-medium">
+                    Save Key
+                </button>
+            </div>
+
+            <!-- Status Area (Hidden by default) -->
+            <div id="apiStatusContainer" class="hidden flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div class="flex items-center gap-3 text-green-400">
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span class="text-sm font-medium tracking-wide">API Key is securely active ✅</span>
+                </div>
+                <button onclick="showApiKeyInput()" class="px-4 py-1 text-xs uppercase tracking-widest text-purple-300 hover:text-white border border-purple-500/30 rounded-lg transition-all">
+                    Change Key
+                </button>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Configuration Panel -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="glass-card rounded-2xl p-6 space-y-6">
+                    <!-- Topic -->
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-purple-400 mb-2 font-semibold">Story Topic</label>
+                        <textarea id="topic" rows="4" placeholder="A clockmaker who discovers a way to pause time for everyone but himself..." 
+                                  class="w-full bg-black/40 border border-purple-500/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition-all resize-none"></textarea>
+                    </div>
+
+                    <!-- Genre & Length -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-purple-400 mb-2 font-semibold">Genre</label>
+                            <select id="genre" class="w-full bg-black/40 border border-purple-500/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-purple-500 transition-all appearance-none">
+                                <option value="Fantasy">Fantasy</option>
+                                <option value="Sci-Fi">Sci-Fi</option>
+                                <option value="Horror">Horror</option>
+                                <option value="Romance">Romance</option>
+                                <option value="Motivational">Motivational</option>
+                                <option value="Mystery">Mystery</option>
+                                <option value="Cyberpunk">Cyberpunk</option>
+                                <option value="Moral Story">Moral Story</option>
+                                <option value="Emotional Story">Emotional Story</option>
+                                <option value="Comedy Story">Comedy Story</option>
+                                <option value="My Story">My Story</option>
+                                <option value="True Story">True Story</option>
+                                <option value="Supernatural Story">Supernatural Story</option>
+                                <option value="Thriller Story">Thriller Story</option>
+                                <option value="Psychological Thriller">Psychological Thriller</option>
+                                <option value="Mythological">Mythological</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-purple-400 mb-2 font-semibold">Length</label>
+                            <select id="length" class="w-full bg-black/40 border border-purple-500/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-purple-500 transition-all appearance-none">
+                                <option value="Short (200 words)">Short</option>
+                                <option value="Medium (500 words)">Medium</option>
+                                <option value="Long (1000 words)">Long</option>
+                                <option value="Ultra Long (Detailed Script/Hour-long Content)">Ultra Long (Epic Script)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Tone Selector -->
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-purple-400 mb-3 font-semibold">Story Tone</label>
+                        <div class="flex flex-wrap gap-2" id="toneContainer">
+                            <div class="tone-chip px-3 py-1 rounded-full text-sm active" data-tone="Dark & Moody">Dark & Moody</div>
+                            <div class="tone-chip px-3 py-1 rounded-full text-sm" data-tone="Whimsical">Whimsical</div>
+                            <div class="tone-chip px-3 py-1 rounded-full text-sm" data-tone="Epic">Epic</div>
+                            <div class="tone-chip px-3 py-1 rounded-full text-sm" data-tone="Melancholic">Melancholic</div>
+                            <div class="tone-chip px-3 py-1 rounded-full text-sm" data-tone="Humorous">Humorous</div>
+                            <div class="tone-chip px-3 py-1 rounded-full text-sm" data-tone=" suspenseful">Suspenseful</div>
+                        </div>
+                    </div>
+
+                    <button id="generateBtn" onclick="generateStory()" class="gold-btn w-full py-4 rounded-xl font-bold text-lg uppercase tracking-widest flex items-center justify-center">
+                        <span id="btnText">Generate Story</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Button (Floating) -->
+        <a href="mailto:contact.me.thanks86@gmail.com" class="fixed bottom-6 right-6 glass-card p-4 rounded-full shadow-2xl hover:scale-110 transition-transform group flex items-center justify-center z-50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gold group-hover:rotate-12 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="absolute right-16 bg-gold text-black text-xs font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Need Help?</span>
+        </a>
+
+        <!-- Support Footer -->
+        <footer class="mt-20 pb-12 text-center border-t border-purple-500/20 pt-8">
+            <p class="text-purple-400 text-sm uppercase tracking-widest mb-4">Support & Assistance</p>
+            <a href="mailto:contact.me.thanks86@gmail.com" class="text-white hover:text-gold transition-colors text-lg font-medium underline decoration-gold underline-offset-8">
+                contact.me.thanks86@gmail.com
+            </a>
+            <p class="text-gray-500 text-xs mt-6 opacity-50">© 2026 StoryAI Premium. All rights reserved.</p>
+        </footer>
+
+            <!-- Output Panel -->
+            <div class="lg:col-span-7">
+                <div class="glass-card rounded-2xl p-6 h-full flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-semibold text-white flex items-center">
+                            <span class="w-2 h-6 bg-gold rounded-full mr-3"></span>
+                            The Tale
+                        </h3>
+                        <button onclick="copyStory()" id="copyBtn" class="hidden text-xs uppercase tracking-widest text-purple-300 hover:text-white transition-colors flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                    <div id="output" class="flex-1 text-gray-300 leading-relaxed whitespace-pre-wrap font-light italic overflow-y-auto max-h-[600px] pr-2">
+                        Your story will appear here...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize stars
+        function createStars() {
+            const container = document.getElementById('stars');
+            const starCount = 150;
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                const size = Math.random() * 3;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.setProperty('--duration', `${Math.random() * 3 + 2}s`);
+                star.style.setProperty('--opacity', Math.random());
+                star.style.animationDelay = `${Math.random() * 5}s`;
+                container.appendChild(star);
+            }
+        }
+        createStars();
+
+        // Tone selection logic
+        const toneChips = document.querySelectorAll('.tone-chip');
+        let selectedTone = 'Dark & Moody';
+
+        toneChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                toneChips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                selectedTone = chip.dataset.tone;
+            });
+        });
+
+        // API Key Management
+        function saveApiKey() {
+            const key = document.getElementById('apiKey').value;
+            if (key) {
+                localStorage.setItem('storyai_api_key', key);
+                updateApiVisibility(true);
+                alert('API Key saved securely!');
+            } else {
+                alert('Please enter a key first.');
+            }
+        }
+
+        function loadApiKey() {
+            const key = localStorage.getItem('storyai_api_key');
+            if (key) {
+                document.getElementById('apiKey').value = key;
+                updateApiVisibility(true);
+            }
+        }
+
+        function showApiKeyInput() {
+            updateApiVisibility(false);
+        }
+
+        function updateApiVisibility(isSaved) {
+            const inputContainer = document.getElementById('apiInputContainer');
+            const statusContainer = document.getElementById('apiStatusContainer');
+            
+            if (isSaved) {
+                inputContainer.classList.add('hidden');
+                statusContainer.classList.remove('hidden');
+            } else {
+                inputContainer.classList.remove('hidden');
+                statusContainer.classList.add('hidden');
+            }
+        }
+        loadApiKey();
+
+        async function generateStory() {
+            const apiKey = document.getElementById('apiKey').value;
+            const topic = document.getElementById('topic').value;
+            const genre = document.getElementById('genre').value;
+            const length = document.getElementById('length').value;
+            const outputDiv = document.getElementById('output');
+            const generateBtn = document.getElementById('generateBtn');
+            const btnText = document.getElementById('btnText');
+            const copyBtn = document.getElementById('copyBtn');
+
+            if (!apiKey) {
+                alert('Please enter and save your OpenRouter API Key first.');
+                return;
+            }
+            if (!topic) {
+                alert('Please provide a story topic.');
+                return;
+            }
+
+            // Loading state
+            generateBtn.disabled = true;
+            btnText.innerHTML = `<span class="loader"></span> Weaving your tale...`;
+            outputDiv.innerHTML = 'Connecting to the cosmic library...';
+            outputDiv.classList.add('opacity-50');
+            copyBtn.classList.add('hidden');
+
+            try {
+                let prompt = `Write a ${genre} story based on this topic: "${topic}". 
+                The tone should be ${selectedTone}. 
+                The length should be approximately ${length}. 
+                Please make the story evocative, professional, and high-quality.`;
+
+                if (length.includes('Ultra Long')) {
+                    prompt = `Create an extensive, detailed script for a ${genre} production that would last approximately one hour.
+                    Topic: "${topic}"
+                    Tone: ${selectedTone}
+                    
+                    Please structure this as a full-length screenplay/script including:
+                    1. An expanded Plot Outline.
+                    2. Character Descriptions.
+                    3. Detailed Scene-by-Scene breakdowns.
+                    4. Extensive dialogue and descriptive action lines.
+                    5. Multiple acts with a clear beginning, rising action, climax, and resolution.
+                    Make it as long and detailed as possible, providing a comprehensive blueprint for a 60-minute story.`;
+                }
+
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': window.location.href,
+                        'X-Title': 'StoryAI'
+                    },
+                    body: JSON.stringify({
+                        model: 'google/gemma-4-31b-it:free',
+                        messages: [
+                            { role: 'system', content: 'You are a master storyteller and award-winning novelist known for vivid imagery and emotional depth.' },
+                            { role: 'user', content: prompt }
+                        ]
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || 'Failed to generate story');
+                }
+
+                const data = await response.json();
+                const story = data.choices[0].message.content;
+
+                outputDiv.innerHTML = story;
+                outputDiv.classList.remove('opacity-50');
+                copyBtn.classList.remove('hidden');
+            } catch (error) {
+                outputDiv.innerHTML = `<span class="text-red-400 font-medium">Error: ${error.message}</span>`;
+                outputDiv.classList.remove('opacity-50');
+            } finally {
+                generateBtn.disabled = false;
+                btnText.innerText = 'Generate Story';
+            }
+        }
+
+        function copyStory() {
+            const text = document.getElementById('output').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copyBtn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = 'Copied!';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
